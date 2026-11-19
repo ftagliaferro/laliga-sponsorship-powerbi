@@ -1,0 +1,4 @@
+*.pbix binary
+*.png binary
+# Datos originales: se guardan byte a byte, sin conversión de fin de línea ni de codificación
+*.csv -text

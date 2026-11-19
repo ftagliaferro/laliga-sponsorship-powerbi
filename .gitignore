@@ -1,0 +1,9 @@
+# Archivos temporales y de bloqueo de Power BI / Office
+~$*
+*.tmp
+*.pbix.bak
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
