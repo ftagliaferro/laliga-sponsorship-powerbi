@@ -106,7 +106,7 @@ Titulo Goles =
 ### `Files` — partidos de las 10 temporadas
 
 Pasos principales:
-1. Toma todos los CSV de la carpeta, excepto `investments.csv`, y los combina en una tabla.
+1. Descarga los 10 CSV de temporadas **directamente desde este repositorio en GitHub** (`Web.Contents` sobre `raw.githubusercontent.com`) y los combina en una tabla. Así el tablero se puede actualizar en cualquier computadora, sin configurar rutas locales.
 2. Descarta las columnas `Round` y `HT` (resultado al entretiempo).
 3. Separa el resultado final (`2-1`) en `Goles_Local` y `Goles_Visita`.
 4. Limpia los nombres de equipos quitando la jornada entre paréntesis (`RCD La Coruña (1)` → `RCD La Coruña`).
@@ -115,7 +115,9 @@ Pasos principales:
 
 ```powerquery
 let
-    Origen = Folder.Files("<ruta>\data"),
+    Base = "https://raw.githubusercontent.com/ftagliaferro/laliga-sponsorship-powerbi/main/data/",
+    Archivos = Table.FromList({"1-liga_2008_09.csv","1-liga_2009_10.csv","1-liga_2010_11.csv","1-liga_2011_12.csv","1-liga_2012_13.csv","1-liga_2013_14.csv","1-liga_2014_15.csv","1-liga_2015_16.csv","1-liga_2016_17.csv","1-liga_2017_18.csv"}, Splitter.SplitByNothing(), {"Name"}),
+    Origen = Table.AddColumn(Archivos, "Content", each Web.Contents(Base, [RelativePath = [Name]]), type binary),
     #"Filas filtradas" = Table.SelectRows(Origen, each ([Name] <> "investments.csv")),
     #"Archivos ocultos filtrados1" = Table.SelectRows(#"Filas filtradas", each [Attributes]?[Hidden]? <> true),
     #"Invocar función personalizada1" = Table.AddColumn(#"Archivos ocultos filtrados1", "Transformar archivo", each #"Transformar archivo"([Content])),
@@ -142,13 +144,22 @@ in
     #"Columnas con nombre cambiado3"
 ```
 
-### `inversiones` — costos de patrocinio
-
-Pasos principales: promueve encabezados, traduce los nombres de columnas, quita los símbolos `$` y los separadores de miles, y convierte los montos a moneda usando la configuración regional `en-US`, porque el archivo usa punto como separador decimal.
+La consulta auxiliar `Archivo de ejemplo`, que Power BI usa para definir la función `Transformar archivo`, también lee desde GitHub:
 
 ```powerquery
 let
-    Origen = Csv.Document(File.Contents("<ruta>\data\investments.csv"),[Delimiter=",", Columns=4, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+    Origen = Web.Contents("https://raw.githubusercontent.com/ftagliaferro/laliga-sponsorship-powerbi/main/data/", [RelativePath = "1-liga_2008_09.csv"])
+in
+    Origen
+```
+
+### `inversiones` — costos de patrocinio
+
+Pasos principales: descarga `investments.csv` desde GitHub, promueve encabezados, traduce los nombres de columnas, quita los símbolos `$` y los separadores de miles, y convierte los montos a moneda usando la configuración regional `en-US`, porque el archivo usa punto como separador decimal.
+
+```powerquery
+let
+    Origen = Csv.Document(Web.Contents("https://raw.githubusercontent.com/ftagliaferro/laliga-sponsorship-powerbi/main/data/", [RelativePath = "investments.csv"]),[Delimiter=",", Columns=4, Encoding=1252, QuoteStyle=QuoteStyle.None]),
     #"Tipo cambiado" = Table.TransformColumnTypes(Origen,{{"Column1", type text}, {"Column2", type text}, {"Column3", type text}, {"Column4", type text}}),
     #"Encabezados promovidos" = Table.PromoteHeaders(#"Tipo cambiado", [PromoteAllScalars=true]),
     #"Columnas con nombre cambiado" = Table.RenameColumns(#"Encabezados promovidos",{{"Team", "Club"}, {"Investment required", "Inversion requerida"}, {"Profit per goal", "Ganancia por gol"}}),
