@@ -88,4 +88,4 @@ Detalle completo en [`docs/enunciado.md`](docs/enunciado.md).
 
 1. Descargar o clonar el repositorio.
 2. Abrir `dashboard/LaLiga_Sponsorship.pbix` con [Power BI Desktop](https://powerbi.microsoft.com/desktop/) (gratuito).
-3. Si pide actualizar datos, apuntar el origen a la carpeta `data/` (*Inicio → Transformar datos → Configuración de origen de datos*).
+3. Las consultas de Power Query leen los CSV directamente desde este repositorio en GitHub (`raw.githubusercontent.com`), así que **Actualizar** funciona sin configurar rutas locales. Si Power BI pide credenciales, elegir **Anónimo**; si pide nivel de privacidad, **Público**.
