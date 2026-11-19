@@ -106,7 +106,7 @@ Titulo Goles =
 ### `Files` — partidos de las 10 temporadas
 
 Pasos principales:
-1. Descarga los 10 CSV de temporadas **directamente desde este repositorio en GitHub** (`Web.Contents` sobre `raw.githubusercontent.com`) y los combina en una tabla. Así el tablero se puede actualizar en cualquier computadora, sin configurar rutas locales.
+1. Descarga los 10 CSV de temporadas **directamente desde este repositorio en GitHub** (`Web.Contents` sobre `raw.githubusercontent.com`) y arma una tabla con la misma estructura que devolvería una carpeta local (`Content`, `Name`, `Attributes`…), así el resto de los pasos de combinación funciona sin cambios. Así el tablero se puede actualizar en cualquier computadora, sin configurar rutas locales.
 2. Descarta las columnas `Round` y `HT` (resultado al entretiempo).
 3. Separa el resultado final (`2-1`) en `Goles_Local` y `Goles_Visita`.
 4. Limpia los nombres de equipos quitando la jornada entre paréntesis (`RCD La Coruña (1)` → `RCD La Coruña`).
@@ -115,9 +115,19 @@ Pasos principales:
 
 ```powerquery
 let
-    Base = "https://raw.githubusercontent.com/ftagliaferro/laliga-sponsorship-powerbi/main/data/",
-    Archivos = Table.FromList({"1-liga_2008_09.csv","1-liga_2009_10.csv","1-liga_2010_11.csv","1-liga_2011_12.csv","1-liga_2012_13.csv","1-liga_2013_14.csv","1-liga_2014_15.csv","1-liga_2015_16.csv","1-liga_2016_17.csv","1-liga_2017_18.csv"}, Splitter.SplitByNothing(), {"Name"}),
-    Origen = Table.AddColumn(Archivos, "Content", each Web.Contents(Base, [RelativePath = [Name]]), type binary),
+    Origen =
+        let
+            base = "https://raw.githubusercontent.com/ftagliaferro/laliga-sponsorship-powerbi/main/data/",
+            nombres = {"1-liga_2008_09.csv", "1-liga_2009_10.csv", "1-liga_2010_11.csv", "1-liga_2011_12.csv", "1-liga_2012_13.csv",
+                       "1-liga_2013_14.csv", "1-liga_2014_15.csv", "1-liga_2015_16.csv", "1-liga_2016_17.csv", "1-liga_2017_18.csv"}
+        in
+            Table.FromRecords(List.Transform(nombres, each [
+                Content = Web.Contents(base, [RelativePath = _]),
+                Name = _,
+                Extension = ".csv",
+                #"Folder Path" = base,
+                Attributes = [Hidden = false]
+            ])),
     #"Filas filtradas" = Table.SelectRows(Origen, each ([Name] <> "investments.csv")),
     #"Archivos ocultos filtrados1" = Table.SelectRows(#"Filas filtradas", each [Attributes]?[Hidden]? <> true),
     #"Invocar función personalizada1" = Table.AddColumn(#"Archivos ocultos filtrados1", "Transformar archivo", each #"Transformar archivo"([Content])),
@@ -144,14 +154,7 @@ in
     #"Columnas con nombre cambiado3"
 ```
 
-La consulta auxiliar `Archivo de ejemplo`, que Power BI usa para definir la función `Transformar archivo`, también lee desde GitHub:
-
-```powerquery
-let
-    Origen = Web.Contents("https://raw.githubusercontent.com/ftagliaferro/laliga-sponsorship-powerbi/main/data/", [RelativePath = "1-liga_2008_09.csv"])
-in
-    Origen
-```
+La consulta auxiliar `Archivo de ejemplo`, que Power BI usa para definir la función `Transformar archivo`, también lee desde el mismo origen en GitHub.
 
 ### `inversiones` — costos de patrocinio
 
